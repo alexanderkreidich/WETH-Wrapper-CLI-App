@@ -29,5 +29,7 @@ const decimals = await publicClient.readContract({
   args: []
 })
 
+console.log(decimals, totalSupply)
+
 
 
