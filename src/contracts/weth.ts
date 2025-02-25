@@ -4,7 +4,7 @@ import wethAbi from '../abis/weth-abi.json'
 import { publicClient, walletClient } from '../client'
 import { WETH_ADDRESS, WETH_DECIMALS } from '../config'
 
-export async function deposit(ethAmount: number) {
+export async function deposit(ethAmount: number): Address {
   try {
     // Convert the entered amount to a BigNumber
     const depositAmountBN = new BigNumber(ethAmount)
@@ -20,7 +20,7 @@ export async function deposit(ethAmount: number) {
     )
 
     // Call the deposit() payable function with the provided ETH (value)
-    const txHash = await walletClient.writeContract({
+    const txHash: Address = await walletClient.writeContract({
       address: WETH_ADDRESS,
       abi: wethAbi,
       functionName: 'deposit',
@@ -28,7 +28,7 @@ export async function deposit(ethAmount: number) {
       value: depositAmountWei,
     })
 
-    console.log('Transaction sent. Transaction hash:', txHash)
+    return txHash
   } catch (error) {
     console.error(
       'Error during ETH deposit:',
@@ -37,7 +37,7 @@ export async function deposit(ethAmount: number) {
   }
 }
 
-export async function withdraw(ethAmount: number) {
+export async function withdraw(ethAmount: number): Address {
   try {
     // Convert the entered amount to a BigNumber
     const withdrawAmountBN = new BigNumber(ethAmount)
@@ -60,7 +60,7 @@ export async function withdraw(ethAmount: number) {
       args: [withdrawAmountWei],
     })
 
-    console.log('Transaction sent. Transaction hash:', txHash)
+    return txHash
   } catch (error) {
     console.error(
       'Error during WETH withdrawal:',
@@ -79,8 +79,6 @@ export async function balanceOf(address: Address) {
       args: [address],
     })) as bigint
 
-    // Get the number of decimals for the WETH contract
-
     // Convert the raw values to BigNumber for accurate arithmetic
     const balanceBN = new BigNumber(balanceRaw.toString())
     const multiplier = new BigNumber(10).exponentiatedBy(WETH_DECIMALS)
@@ -88,9 +86,6 @@ export async function balanceOf(address: Address) {
     // Convert the balance into a human-readable format by dividing by 10^decimals
     const humanReadableBalance = balanceBN.dividedBy(multiplier)
 
-    console.log(
-      `WETH balance for address ${address}: ${humanReadableBalance.toString()}`
-    )
     return humanReadableBalance
   } catch (error) {
     if (error instanceof RpcError) {
