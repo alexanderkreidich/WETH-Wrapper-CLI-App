@@ -12,15 +12,15 @@ dotenv.config();
 const RPC_URL = process.env.RPC_URL!;
 const PRIVATE_KEY = process.env.PRIVATE_KEY!;
 
-// Проверяем корректность PRIVATE_KEY: должен начинаться с "0x" и содержать 64 шестнадцатеричных символа
+// Validate PRIVATE_KEY: it must start with "0x" and contain 64 hexadecimal characters
 if (!/^0x[a-fA-F0-9]{64}$/.test(PRIVATE_KEY)) {
   console.error(
-    "Ошибка: Некорректный PRIVATE_KEY. Ожидается hex-строка, начинающаяся с '0x' и содержащая 64 шестнадцатеричных символа."
+    "Error: Invalid PRIVATE_KEY. Expected a hex string starting with '0x' and containing 64 hexadecimal characters."
   );
   process.exit(1);
 }
 
-// Создаем объект аккаунта из приватного ключа
+// Create account object from the private key
 const account = privateKeyToAccount(PRIVATE_KEY);
 
 const walletClient = createWalletClient({
@@ -33,30 +33,30 @@ const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
 export async function deposit() {
   try {
-    // Создаем CLI-интерфейс для ввода
+    // Create CLI interface for input
     const rl = createInterface({ input, output });
     const answer = await new Promise<string>((resolve) => {
-      rl.question("Введите сумму ETH для депозита: ", resolve);
+      rl.question("Enter the amount of ETH to deposit: ", resolve);
     });
     rl.close();
 
-    // Валидация пользовательского ввода
+    // Validate user input
     const depositValue = Number(answer);
     if (isNaN(depositValue) || depositValue <= 0) {
-      console.error("Неверный ввод. Сумма должна быть положительным числом.");
+      console.error("Invalid input. The amount must be a positive number.");
       return;
     }
 
-    // Преобразуем введенную сумму в BigNumber
+    // Convert the entered amount to a BigNumber
     const depositAmountBN = new BigNumber(answer);
-    // Переводим ETH в wei (учитываем 18 знаков после запятой)
+    // Convert ETH to wei (using 18 decimal places)
     const weiMultiplier = new BigNumber(10).exponentiatedBy(18);
     const depositAmountWeiStr = depositAmountBN.multipliedBy(weiMultiplier).toFixed(0);
     const depositAmountWei = BigInt(depositAmountWeiStr);
 
-    console.log(`Внесение ${answer} ETH (${depositAmountWeiStr} wei) в контракт WETH...`);
+    console.log(`Depositing ${answer} ETH (${depositAmountWeiStr} wei) to the WETH contract...`);
 
-    // Вызов платежной функции deposit() с передачей ETH (value)
+    // Call the deposit() payable function with the provided ETH (value)
     const txHash = await walletClient.writeContract({
       address: wethAddress,
       abi: abi,
@@ -65,38 +65,38 @@ export async function deposit() {
       value: depositAmountWei,
     });
 
-    console.log("Транзакция отправлена. Хэш транзакции:", txHash);
+    console.log("Transaction sent. Transaction hash:", txHash);
   } catch (error) {
-    console.error("Ошибка при депозите ETH:", error instanceof Error ? error.message : error);
+    console.error("Error during ETH deposit:", error instanceof Error ? error.message : error);
   }
 }
 
 export async function withdrawWETH() {
   try {
-    // Создаем CLI-интерфейс для ввода суммы
+    // Create CLI interface for input
     const rl = createInterface({ input, output });
     const answer = await new Promise<string>((resolve) => {
-      rl.question("Введите сумму WETH для вывода (в ETH): ", resolve);
+      rl.question("Enter the amount of WETH to withdraw (in ETH units): ", resolve);
     });
     rl.close();
 
-    // Валидация ввода
+    // Validate user input
     const withdrawValue = Number(answer);
     if (isNaN(withdrawValue) || withdrawValue <= 0) {
-      console.error("Неверный ввод. Сумма должна быть положительным числом.");
+      console.error("Invalid input. The amount must be a positive number.");
       return;
     }
 
-    // Преобразуем введенную сумму в BigNumber
+    // Convert the entered amount to a BigNumber
     const withdrawAmountBN = new BigNumber(answer);
-    // Переводим ETH в wei (учитывая 18 десятичных знаков)
+    // Convert ETH to wei (using 18 decimal places)
     const weiMultiplier = new BigNumber(10).exponentiatedBy(18);
     const withdrawAmountWeiStr = withdrawAmountBN.multipliedBy(weiMultiplier).toFixed(0);
     const withdrawAmountWei = BigInt(withdrawAmountWeiStr);
 
-    console.log(`Вывод ${answer} WETH (${withdrawAmountWeiStr} wei) обратно в ETH...`);
+    console.log(`Withdrawing ${answer} WETH (${withdrawAmountWeiStr} wei) back to ETH...`);
 
-    // Вызываем функцию withdraw(uint256) для вывода WETH
+    // Call the withdraw(uint256) function to withdraw WETH
     const txHash = await walletClient.writeContract({
       address: wethAddress,
       abi: abi,
@@ -104,12 +104,12 @@ export async function withdrawWETH() {
       args: [withdrawAmountWei],
     });
 
-    console.log("Транзакция отправлена. Хэш транзакции:", txHash);
+    console.log("Transaction sent. Transaction hash:", txHash);
   } catch (error) {
-    console.error("Ошибка при выводе WETH:", error instanceof Error ? error.message : error);
+    console.error("Error during WETH withdrawal:", error instanceof Error ? error.message : error);
   }
 }
 
-// Для тестирования можно вызвать одну из функций, например:
+// For testing, you can call one of the functions, e.g.:
 // deposit().catch(console.error);
 // withdrawWETH().catch(console.error);

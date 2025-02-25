@@ -36,36 +36,36 @@ export async function withdrawWETH() {
       args: []
     }) as bigint;
 
-    // Преобразуем значения в BigNumber
+    // Convert values to BigNumber
     const totalSupplyBN = new BigNumber(totalSupply.toString());
-    // Вычисляем множитель в виде 10^decimals
+    // Calculate multiplier as 10^decimals
     const multiplier = new BigNumber(10).exponentiatedBy(Number(decimals));
-    // Делим общее количество на множитель для получения человеческого формата
+    // Divide the total supply by the multiplier to obtain a human-readable format
     const humanReadableSupply = totalSupplyBN.dividedBy(multiplier);
 
     return humanReadableSupply;
   } catch (error) {
     if (error instanceof RpcError) {
-      console.error("Ошибка при вызове контракта для withdrawWETH:", error.message);
+      console.error("Error calling contract for withdrawWETH:", error.message);
     } else {
-      console.error("Непредвиденная ошибка в withdrawWETH:", error);
+      console.error("Unexpected error in withdrawWETH:", error);
     }
     return null;
   }
 }
 
 export async function checkBalance(address: string) {
-  // Валидируем адрес с помощью регулярного выражения
+  // Validate the address using a regular expression
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    console.error("Неверный адрес. Убедитесь, что адрес начинается с 0x и содержит 40 шестнадцатеричных символов.");
+    console.error("Invalid address. Ensure the address starts with 0x and contains 40 hexadecimal characters.");
     return null;
   }
 
-  // Адрес WETH контракта (проверьте, что адрес записан с правильной контрольной суммой)
+  // WETH contract address (make sure the address is checksummed correctly)
   const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
   try {
-    // Получаем баланс (raw-значение) для заданного аккаунта
+    // Get the raw balance for the specified account
     const balanceRaw = await publicClient.readContract({
       address: wethAddress,
       abi: abi,
@@ -73,7 +73,7 @@ export async function checkBalance(address: string) {
       args: [address]
     }) as bigint;
 
-    // Получаем количество знаков (decimals) контракта WETH
+    // Get the number of decimals for the WETH contract
     const decimalsRaw = await publicClient.readContract({
       address: wethAddress,
       abi: abi,
@@ -81,20 +81,20 @@ export async function checkBalance(address: string) {
       args: []
     });
 
-    // Преобразуем raw-значения в BigNumber для корректной арифметики
+    // Convert the raw values to BigNumber for accurate arithmetic
     const balanceBN = new BigNumber(balanceRaw.toString());
     const multiplier = new BigNumber(10).exponentiatedBy(Number(decimalsRaw));
 
-    // Получаем значение в человекочитаемом формате, деля баланс на 10^decimals
+    // Convert the balance into a human-readable format by dividing by 10^decimals
     const humanReadableBalance = balanceBN.dividedBy(multiplier);
 
-    console.log(`Баланс WETH для адреса ${address}: ${humanReadableBalance.toString()}`);
+    console.log(`WETH balance for address ${address}: ${humanReadableBalance.toString()}`);
     return humanReadableBalance;
   } catch (error) {
     if (error instanceof RpcError) {
-      console.error("Ошибка при вызове контракта для проверки баланса:", error.message);
+      console.error("Error calling contract for balance check:", error.message);
     } else {
-      console.error("Непредвиденная ошибка в checkBalance:", error);
+      console.error("Unexpected error in checkBalance:", error);
     }
     return null;
   }

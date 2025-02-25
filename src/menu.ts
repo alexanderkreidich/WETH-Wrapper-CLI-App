@@ -1,34 +1,34 @@
 import { createInterface } from "readline";
-import { checkBalance } from "./index"; // Функция проверки баланса, которая принимает адрес как аргумент
+import { checkBalance } from "./index"; // Balance check function that takes an address as an argument
 import { deposit, withdrawWETH } from "./wallet";
 
 async function mainMenu() {
-  // Создаем один экземпляр readline, который будет использоваться во всем меню
+  // Create a single instance of readline that will be used for the entire menu
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
-  // Обёртка для rl.question, возвращающая Promise
+  // Wrapper for rl.question that returns a Promise
   const question = (query: string): Promise<string> =>
     new Promise((resolve) => rl.question(query, resolve));
 
   while (true) {
-    console.log("\nВыберите действие:");
-    console.log("1. Проверить баланс WETH");
-    console.log("2. Депозит ETH (обернуть в WETH)");
-    console.log("3. Вывод WETH (распаковать в ETH)");
-    console.log("4. Выход");
+    console.log("\nSelect an action:");
+    console.log("1. Check WETH balance");
+    console.log("2. Deposit ETH (wrap into WETH)");
+    console.log("3. Withdraw WETH (unwrap to ETH)");
+    console.log("4. Exit");
 
-    const choice = await question("Введите номер действия: ");
+    const choice = await question("Enter action number: ");
 
     switch (choice.trim()) {
       case "1": {
-        const address = await question("Введите адрес для проверки баланса: ");
+        const address = await question("Enter the address to check balance: ");
         try {
           await checkBalance(address);
         } catch (error) {
-          console.error("Ошибка при проверке баланса:", error);
+          console.error("Error checking balance:", error);
         }
         break;
       }
@@ -36,7 +36,7 @@ async function mainMenu() {
         try {
           await deposit();
         } catch (error) {
-          console.error("Ошибка при депозите ETH:", error);
+          console.error("Error during ETH deposit:", error);
         }
         break;
       }
@@ -44,20 +44,20 @@ async function mainMenu() {
         try {
           await withdrawWETH();
         } catch (error) {
-          console.error("Ошибка при выводе WETH:", error);
+          console.error("Error during WETH withdrawal:", error);
         }
         break;
       }
       case "4":
-        console.log("Выход...");
+        console.log("Exiting...");
         rl.close();
         process.exit(0);
       default:
-        console.log("Неверный ввод. Попробуйте снова.");
+        console.log("Invalid input. Please try again.");
     }
   }
 }
 
 mainMenu().catch((error) =>
-  console.error("Ошибка в главном меню:", error)
+  console.error("Error in main menu:", error)
 );
