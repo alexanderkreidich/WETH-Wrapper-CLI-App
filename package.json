@@ -2,7 +2,7 @@
   "name": "weth-wrapper-cli-app",
   "module": "index.ts",
   "scripts": {
-    "start": "bun src/menu.ts"
+    "start": "bun src/index.ts"
   },
   "type": "module",
   "devDependencies": {

@@ -1,101 +1,60 @@
-import abi from "./abi.json";
-import { createPublicClient, http, RpcError, type Address } from "viem";
-import { mainnet } from "viem/chains";
-import BigNumber from "bignumber.js";
-import dotenv from "dotenv";
+import { createInterface } from "readline";
+import { checkBalance, deposit, withdrawWETH } from "./contracts/weth";
 
-dotenv.config();
+async function mainMenu() {
+  // Create a single instance of readline that will be used for the entire menu
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
-const RPC_URL: string = process.env.RPC_URL!;
+  // Wrapper for rl.question that returns a Promise
+  const question = (query: string): Promise<string> =>
+    new Promise((resolve) => rl.question(query, resolve));
 
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http(RPC_URL)
-});
+  while (true) {
+    console.log("\nSelect an action:");
+    console.log("1. Check WETH balance");
+    console.log("2. Deposit ETH (wrap into WETH)");
+    console.log("3. Withdraw WETH (unwrap to ETH)");
+    console.log("4. Exit");
 
-export async function withdrawWETH() {
-  try {
-    const totalSupply = await publicClient.readContract({
-      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-      abi: abi,
-      functionName: 'totalSupply',
-      args: []
-    }) as bigint;
+    const choice = await question("Enter action number: ");
 
-    const decimals = await publicClient.readContract({
-      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-      abi: abi,
-      functionName: 'decimals',
-      args: []
-    }) as bigint;
-
-    const balanceOf = await publicClient.readContract({
-      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-      abi: abi,
-      functionName: 'balanceOf',
-      args: []
-    }) as bigint;
-
-    // Convert values to BigNumber
-    const totalSupplyBN = new BigNumber(totalSupply.toString());
-    // Calculate multiplier as 10^decimals
-    const multiplier = new BigNumber(10).exponentiatedBy(Number(decimals));
-    // Divide the total supply by the multiplier to obtain a human-readable format
-    const humanReadableSupply = totalSupplyBN.dividedBy(multiplier);
-
-    return humanReadableSupply;
-  } catch (error) {
-    if (error instanceof RpcError) {
-      console.error("Error calling contract for withdrawWETH:", error.message);
-    } else {
-      console.error("Unexpected error in withdrawWETH:", error);
+    switch (choice.trim()) {
+      case "1": {
+        const address = await question("Enter the address to check balance: ");
+        try {
+          await checkBalance(address);
+        } catch (error) {
+          console.error("Error checking balance:", error);
+        }
+        break;
+      }
+      case "2": {
+        try {
+          await deposit();
+        } catch (error) {
+          console.error("Error during ETH deposit:", error);
+        }
+        break;
+      }
+      case "3": {
+        try {
+          await withdrawWETH();
+        } catch (error) {
+          console.error("Error during WETH withdrawal:", error);
+        }
+        break;
+      }
+      case "4":
+        console.log("Exiting...");
+        rl.close();
+        process.exit(0);
+      default:
+        console.log("Invalid input. Please try again.");
     }
-    return null;
   }
 }
 
-export async function checkBalance(address: string) {
-  // Validate the address using a regular expression
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    console.error("Invalid address. Ensure the address starts with 0x and contains 40 hexadecimal characters.");
-    return null;
-  }
-
-  // WETH contract address (make sure the address is checksummed correctly)
-  const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-
-  try {
-    // Get the raw balance for the specified account
-    const balanceRaw = await publicClient.readContract({
-      address: wethAddress,
-      abi: abi,
-      functionName: "balanceOf",
-      args: [address]
-    }) as bigint;
-
-    // Get the number of decimals for the WETH contract
-    const decimalsRaw = await publicClient.readContract({
-      address: wethAddress,
-      abi: abi,
-      functionName: "decimals",
-      args: []
-    });
-
-    // Convert the raw values to BigNumber for accurate arithmetic
-    const balanceBN = new BigNumber(balanceRaw.toString());
-    const multiplier = new BigNumber(10).exponentiatedBy(Number(decimalsRaw));
-
-    // Convert the balance into a human-readable format by dividing by 10^decimals
-    const humanReadableBalance = balanceBN.dividedBy(multiplier);
-
-    console.log(`WETH balance for address ${address}: ${humanReadableBalance.toString()}`);
-    return humanReadableBalance;
-  } catch (error) {
-    if (error instanceof RpcError) {
-      console.error("Error calling contract for balance check:", error.message);
-    } else {
-      console.error("Unexpected error in checkBalance:", error);
-    }
-    return null;
-  }
-}
+mainMenu().catch((error) => console.error("Error in main menu:", error));
