@@ -34,7 +34,7 @@ async function mainMenu() {
       }
       case "2": {
         try {
-          await deposit(rl);
+          await deposit();
         } catch (error) {
           console.error("Ошибка при депозите ETH:", error);
         }
@@ -42,7 +42,7 @@ async function mainMenu() {
       }
       case "3": {
         try {
-          await withdrawWETH(rl);
+          await withdrawWETH();
         } catch (error) {
           console.error("Ошибка при выводе WETH:", error);
         }
